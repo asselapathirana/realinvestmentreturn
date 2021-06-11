@@ -221,6 +221,7 @@ if __name__ == "__main__":
     print("rental income invested with same return as the property appreciation rate, ")
     print("the extra investment build-up due to rental income {:.0f} {}. ".format(value_from_property_income, curr))
     print("The total investment build-up upon selling the property {:.0f} {}.".format(value_from_property_income+sval, curr))
+    print("Total 'return on investment' (before inflation adjustment) is {:.2%}".format(totalreturn_property))
     print("The USD.{}=x rate in {}={:.2f}, in {}={:.2f} ".format(curr, byr, xrate1, syr, xrate2))
     print("Inflation figures calculated by:")
     print("1. Converting buying price to USD at year {}".format(byr))
