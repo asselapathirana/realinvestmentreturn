@@ -4,22 +4,22 @@ from SandPCalc import *
 
 
 def test_no_inflation():
-    ret=get_end_value(1000, startyear=2001, endyear=2021, adjust_inflation=False)
+    ret=sap500_end_value(1000, startyear=2001, endyear=2021, adjust_inflation=False)
     print(ret)
     assert ret == pytest.approx([4160, 315.98/100], rel=.001)
     
 def test_with_inflation():
-    ret=get_end_value(1000, startyear=2001, endyear=2021, adjust_inflation=True)
+    ret=sap500_end_value(1000, startyear=2001, endyear=2021, adjust_inflation=True)
     print(ret)
     assert ret == pytest.approx([4159.78, 176.21/100.], rel=.001)
 
 def test_with_inflation_and_cost():
-    ret=get_end_value(1000, startyear=2001, endyear=2021, adjust_inflation=True, annual_cost_frac=0.25/100)
+    ret=sap500_end_value(1000, startyear=2001, endyear=2021, adjust_inflation=True, annual_cost_frac=0.25/100)
     print(ret)
     assert ret == pytest.approx([3956.66, 162.73/100.], rel=.001)
     
 def test_with_inflation_cost_and_dividend_tax():
-    ret=get_end_value(1000, startyear=2001, endyear=2021, adjust_inflation=True, annual_cost_frac=0.25/100, dividend_tax=0.15)
+    ret=sap500_end_value(1000, startyear=2001, endyear=2021, adjust_inflation=True, annual_cost_frac=0.25/100, dividend_tax=0.15)
     print(ret)
     assert ret == pytest.approx([3738.37, 148.23/100.], rel=.001)
 

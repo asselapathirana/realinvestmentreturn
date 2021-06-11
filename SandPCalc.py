@@ -50,13 +50,12 @@ def calc_interest(buy_price, sell_price, buy_year, sell_year):
     return grossreturn
  
 
-
 """
 Calculagtes the final value of an investment with 
 
 returns a list of value (final value, total return percentage)
 """
-def get_end_value(investment, 
+def sap500_end_value(investment, 
                   startyear=2001, endyear=2021, 
                   annual_cost_frac=0.0, 
                   adjust_inflation=False, dividend_tax=.0 ):
@@ -67,18 +66,22 @@ def get_end_value(investment,
     initial_n=myspdf.loc[startyear]['endvalue']
     initial_v=myspdf.loc[startyear]['Value']
     final_v=myspdf.loc[endyear]['Value']
-    initial_inf=myspdf.loc[startyear]['CPI']
-    final_inf = myspdf.loc[endyear]['CPI']
+
     
     fiv=(final_n*final_v)/(initial_n*initial_v)*investment
     ret=(fiv-investment)/investment
     
     if adjust_inflation:
-        inf=(final_inf-initial_inf)/initial_inf
+        inf = inflation_calc(startyear, endyear)
         ret=(ret+1)/(inf+1)-1
         
-    
     return fiv, ret
+
+def inflation_calc(startyear, endyear):
+    initial_inf=spdf.loc[startyear]['CPI']
+    final_inf = spdf.loc[endyear]['CPI']        
+    inf=(final_inf-initial_inf)/initial_inf
+    return inf
     
 
 def get_xrate(year, currency):
@@ -104,7 +107,7 @@ def get_return_value_in_local(investment, currency="LKR",
                   adjust_inflation=False, dividend_tax=.0, conversion_cost_frac=.02 ):
     xrate1=get_xrate(startyear,currency)
     usd_value=investment/xrate1*(1-conversion_cost_frac)
-    usd_end_value=get_end_value(usd_value, 
+    usd_end_value=sap500_end_value(usd_value, 
                   startyear, endyear, 
                   annual_cost_frac, 
                   adjust_inflation, dividend_tax)[0]
@@ -121,7 +124,7 @@ if __name__ == "__main__":
     #                               dividend_tax=0.15,
     #                               conversion_cost_frac=.02)
     # print(ret)
-    ev = get_end_value(1000, adjust_inflation=False)
+    ev = sap500_end_value(1000, adjust_inflation=False)
     print("Final value: {}, return on invstment {:.2%}".format(*ev))
     # ev = get_end_value(1000, adjust_inflation=True)
     # print("Final value: {}, return on invstment {:.2%}".format(*ev))
