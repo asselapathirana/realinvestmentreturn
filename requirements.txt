@@ -22,7 +22,7 @@ MarkupSafe==2.0.1
 more-itertools==8.8.0
 numpy==1.19.5
 packaging==20.9
-pandas==1.2.4
+pandas
 plotly==4.14.3
 pluggy==0.13.1
 py==1.10.0
