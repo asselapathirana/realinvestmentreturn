@@ -40,11 +40,8 @@ def test_get_xrate2():
     
 @pytest.mark.xrate  
 def test_get_xrate_fail():
-    with pytest.raises(DataNotAvailableError):
+    with pytest.raises(Exception):
         get_xrate(1881,'LKR') # should fail
-
- 
-
 
 @pytest.mark.tg
 def test_gross_return():
@@ -76,8 +73,10 @@ def test_exchange_and_invest():
     
 @pytest.mark.integrated
 def test_compare_investment():
+    results, \
     return_only_property_appreciation, totalreturn_property, \
                value_from_property_income, propertyendvalue, \
+               propertyendvalue_inflation_adjusted, \
                property_inflation_adjusted_annual_return, stock_local_currency_end_value, \
                stock_annual_rate_in_local_currency, stock_usd_end_value,\
                ratio_to_older_local,\
@@ -95,6 +94,7 @@ def test_compare_investment():
     assert xrate1 == pytest.approx(100.44, rel=0.001)
     assert xrate2 == pytest.approx(196.11, rel=0.001)
     assert propertyendvalue == pytest.approx(65803938, rel=0.001)
+    assert len(results) > 1000
     
 
 if __name__=="__main__":

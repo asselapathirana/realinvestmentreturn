@@ -10,21 +10,16 @@ import logging
 import pandas as pd
 import numpy as np
 
+from readExchangeRates import get_rate, currencylist
+
 # define Python user-defined exceptions
 class DataNotAvailableError(Exception):
     """Base class for other exceptions"""
     pass
 
 spdf = pd.read_csv('./data/s_and_p_500.csv', index_col="Year", 
-                   converters={"Value": np.float})
+                   converters={"Value": float})
 spdf['endvalue']=np.nan
-
-df = pd.read_csv('./data/currency_codes.csv', encoding="ISO-8859-1")
-#remove null rows
-currencies=df[pd.to_numeric(df['Number'], errors='coerce').notnull()].copy()
-currencies['Number'] = currencies['Number'].astype(float)  
-currencies.drop(['Number','Country'],inplace=True, axis=1)
-currencylist=dict(currencies.values.tolist())
 
 
 def calc_ret(myspdf, annual_cost_frac=0, dividend_tax=0.0):
@@ -99,7 +94,7 @@ def inflation_calc(startyear, endyear):
     return factor_to_old_dollars
     
 
-def get_xrate(year, currency):
+def get_xrate_direct(year, currency):
     YEAR=year
     CURR=currency
     ln=f"https://fxtop.com/en/historical-exchange-rates.php?A=1&C1=USD&C2={CURR}&MA=1&DD1=01&MM1=01&YYYY1={YEAR}&B=1&P=&I=1&DD2=31&MM2=12&YYYY2={YEAR}&btnOK=Go%21"
@@ -107,6 +102,10 @@ def get_xrate(year, currency):
         ln, header=0)[-3]
     xrate_check(df, year)
     return df.mean().iloc[0] 
+
+def get_xrate(year, currency):
+    return get_rate(currency, year)
+
 
 def xrate_check(df, year):
     #check for sanity
@@ -147,7 +146,7 @@ stock_annual_rate_in_local_currency = return in terms of local currency as annua
 xrate1 = exchange rate at the begining, 
 xrate2 = exchange rate at the end. 
 """
-def compare_investment(currency, buy_price, sell_price, buy_year, sell_year, 
+def compare_investment(curr, bval, sval, byr, syr, 
                         rental_income_frac=0.03, 
                         rental_cost_fraction=0.25,
                         conversion_cost_frac=0.02,
@@ -159,9 +158,9 @@ def compare_investment(currency, buy_price, sell_price, buy_year, sell_year,
     stock_annual_rate_in_local_currency, \
     stock_usd_end_value, \
     ratio_to_older_local,\
-    xrate1, xrate2                       =get_return_value_in_local(buy_price, 
-                                                                    currency, buy_year, 
-                                                                    sell_year, 
+    xrate1, xrate2                       =get_return_value_in_local(bval, 
+                                                                    curr, byr, 
+                                                                    syr, 
                                                                     annual_stock_cost_frac, 
                                                                     adjust_inflation, 
                                                                     dividend_tax,  
@@ -170,18 +169,60 @@ def compare_investment(currency, buy_price, sell_price, buy_year, sell_year,
     return_only_property_appreciation, \
         totalreturn_property, \
         value_from_property_income = get_property_return(
-            buy_price, sell_price, buy_year, sell_year, rental_income_frac=rental_income_frac, cost_fraction=rental_cost_fraction, selling_cost_fraction=selling_cost_fraction)
+            bval, sval, byr, syr, 
+            rental_income_frac=rental_income_frac, 
+            cost_fraction=rental_cost_fraction, 
+            selling_cost_fraction=selling_cost_fraction)
     
-    propertyendvalue=value_from_property_income+sell_price*(1-selling_cost_fraction)
+    propertyendvalue=value_from_property_income+sval*(1-selling_cost_fraction)
     propertyendvalue_inflation_adjusted=propertyendvalue*ratio_to_older_local
-    property_inflation_adjusted_return=(propertyendvalue_inflation_adjusted-buy_price)/buy_price
-    property_inflation_adjusted_annual_return=(property_inflation_adjusted_return+1)**(1/(sell_year-buy_year))-1
-    return return_only_property_appreciation, totalreturn_property, \
+    property_inflation_adjusted_return=(propertyendvalue_inflation_adjusted-bval)/bval
+    property_inflation_adjusted_annual_return=(property_inflation_adjusted_return+1)**(1/(syr-byr))-1
+    
+    logging.debug(f"")
+    
+    results=f"""
+    ## Property Investment
+    
+    1. Bought in {byr} for {bval} {curr}. (Assume no expenses at buying.)
+    2. Sold in {syr} for {sval} {curr}. (An expense of {selling_cost_fraction:.2%} of selling price at selling.)
+    
+    * In {curr}, property value appreciated annually by {return_only_property_appreciation:0.2%}
+    * Considering an annual rental income of {rental_income_frac:0.2%} of the current value of the property, 
+    and assuming the costs of maintenance and rental (including possible empty months)
+    cost of {rental_cost_fraction:0.0%} of rental income.
+    * Rental income invested with same return as the property appreciation rate.
+    * The extra investment build-up due to rental income {value_from_property_income:.0f} {curr}. 
+    * The total investment build-up upon selling the property {value_from_property_income+sval:.0f} {curr}. ({propertyendvalue:.0f} {curr} after selling cost.)
+    * Total 'return on investment' (before "inflation" adjustment) is {totalreturn_property:.2%}
+    * The USD.{curr}=x rate in {byr}={xrate1:.2f}, in {syr}={xrate2:.2f}.     
+    * The factor to bring {syr} {curr} to {byr} {curr} is x{ratio_to_older_local:0.5f} (See 'small print' for the method)
+    * The total return of {propertyendvalue:.0f} {curr} (Before adjusting for "inflation".) 
+    * Ajusted for "inflation" (in {byr} LKR) {propertyendvalue_inflation_adjusted:.0f} {curr}. Important Note: See 'small print' below. 
+    * Which is a real annual return of {property_inflation_adjusted_annual_return:.2%}.
+    
+    ## Alternative scenario:
+    
+    * In {byr}, {bval} {curr} converted to USD (at a cost of {conversion_cost_frac:.2%} and rate USD.{curr}=x of {xrate1:.2f}).
+    (= {bval/xrate1*(1-conversion_cost_frac):0.0f} USD.)
+    * Then it is invested in a S&P500 index fund with expense ratio of {annual_stock_cost_frac:.2%}
+    * As a non-resident alien investment, the dividend is taxed at {dividend_tax:.2%} (assuming a tax-treaty)
+    After tax dividend is reinvested.")
+    * The inflation adjusted (based on US consumer price index data) value of the portfolio in {syr} will be {stock_usd_end_value:.0f} USD.
+    * Which will be (at USD.{curr}=x of {xrate2:.2f}), {stock_usd_end_value*(1-conversion_cost_frac)*xrate2:.0f} {curr}
+    * This represents an net annual ("inflation" adjusted) return {curr} of {stock_annual_rate_in_local_currency:.2%}"""  
+   
+    
+    return results, return_only_property_appreciation, totalreturn_property, \
            value_from_property_income, propertyendvalue, \
+           propertyendvalue_inflation_adjusted, \
            property_inflation_adjusted_annual_return, stock_local_currency_end_value, \
            stock_annual_rate_in_local_currency, stock_usd_end_value,\
            ratio_to_older_local,\
-           xrate1, xrate2                
+           xrate1, xrate2       
+
+
+       
     
     
 
@@ -199,47 +240,26 @@ if __name__ == "__main__":
     syr=2021
     rental_income_frac=0.03
     rental_cost_fraction=0.25
-    annual_stock_cost_frac=0.015
+    annual_stock_cost_frac=0.0015
     dividend_tax=0.15
     conversion_cost_frac=0.02
     selling_cost_fraction=0.05
-    return_only_property_appreciation, totalreturn_property, \
-               value_from_property_income, total_property_value, property_inflation_adjusted_annual_return, stock_local_currency_end_value, \
-               stock_annual_rate_in_local_currency, stock_usd_end_value,\
-               ratio_to_older_local,\
-               xrate1, xrate2 = compare_investment(curr, bval, sval, byr, syr, rental_income_frac=rental_income_frac, 
-                           rental_cost_fraction=rental_cost_fraction,
-                           annual_stock_cost_frac=annual_stock_cost_frac, dividend_tax=dividend_tax, conversion_cost_frac=conversion_cost_frac,
-                           selling_cost_fraction=selling_cost_fraction)
-    print("Bought in {} for {} {}".format(byr,bval,curr))
-    print("Sold in {} for {} {}".format(syr,sval,curr))
-    print("No expenses at buying. An expense of {:.2%} of selling price at selling.".format(selling_cost_fraction))
-    print("In {} value appreciated annually by {:0.2%}".format(curr, return_only_property_appreciation))
-    print("Considering an annual rental income of {:0.2%} of the current value of the property, ".format(rental_income_frac))
-    print("and assuming the costs of maintenance and rental (including possible empty months)")
-    print("cost of {:0.0%} of rental income, ".format(rental_cost_fraction))
-    print("rental income invested with same return as the property appreciation rate, ")
-    print("the extra investment build-up due to rental income {:.0f} {}. ".format(value_from_property_income, curr))
-    print("The total investment build-up upon selling the property {:.0f} {}.".format(value_from_property_income+sval, curr))
-    print("Total 'return on investment' (before inflation adjustment) is {:.2%}".format(totalreturn_property))
-    print("The USD.{}=x rate in {}={:.2f}, in {}={:.2f} ".format(curr, byr, xrate1, syr, xrate2))
-    print("Inflation figures calculated by:")
-    print("1. Converting buying price to USD at year {}".format(byr))
-    print("2. factoring the ratio of consumer price indecies x(CPI{})/(CPI{})".format(byr,syr))
-    print("3. Converting back to {} at year {}".format(curr, syr))
-    print("Using the above method, the factor to bring {} {} to {} {} is x{:0.5f}".format(syr, curr, byr, curr, ratio_to_older_local))
-    print("The total return of {:.0f} {} in {} {} = {:.0f} ".format(value_from_property_income+sval, curr, byr, 
-                                                                    curr, (value_from_property_income+sval)*ratio_to_older_local))
-    print("Which is a real annual return of {:.2%}.".format(property_inflation_adjusted_annual_return))
-    print("Alternative scenario:")
-    print("In {}, {} {} converted to USD (at a cost of {:.2%} and rate USD.{}=x of {:.2f}).".format(byr,bval,curr, conversion_cost_frac, curr, xrate1))
-    print("Then it is invested in a S&P500 index fund with expense ratio of {:.2%}".format(annual_stock_cost_frac))
-    print("As a non-resident alien investment, the dividend is taxed at {:.2%} (assuming a tax-treaty)".format(dividend_tax))
-    print("After tax divident is reinvested.")
-    print("The inflation adjusted value of the portfolio in {} will be {:.0f} USD.".format(syr, stock_usd_end_value))
-    print("Which will be (at USD.{}=x of {:.2f}), {:.0f} {}".format(curr, xrate2, stock_usd_end_value*(1-conversion_cost_frac)*xrate2, curr))
-    print("This represents an annual (inflation adjusted) rate of retun of {:.2%}".format(stock_annual_rate_in_local_currency))
-    
+    results, return_only_property_appreciation, \
+        totalreturn_property, \
+        value_from_property_income,\
+        total_property_value, \
+        propertyendvalue_inflation_adjusted, \
+        property_inflation_adjusted_annual_return, \
+        stock_local_currency_end_value, \
+        stock_annual_rate_in_local_currency, \
+        stock_usd_end_value,\
+        ratio_to_older_local,\
+        xrate1, xrate2 = compare_investment(curr, bval, sval, byr, syr, rental_income_frac=rental_income_frac, 
+                    rental_cost_fraction=rental_cost_fraction,
+                    annual_stock_cost_frac=annual_stock_cost_frac, dividend_tax=dividend_tax, conversion_cost_frac=conversion_cost_frac,
+                    selling_cost_fraction=selling_cost_fraction)
+
+    print(results)
     
     #ret=get_property_return(1000,2000,2001,2011,)
     # ret=get_return_value_in_local(1000, "LKR", 2001, 2021, 

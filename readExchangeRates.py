@@ -2,7 +2,6 @@ import datetime
 import pandas as pd
 import sqlite3
 import logging
-from SandPCalc import currencylist
 
 DATABASE = "./data/XRATES.db"
 TABLENAME = "xrates"
@@ -12,19 +11,38 @@ YEAR_CN = "year"
 RATE_CN = "rate"
 COUNTRY_CN="country"
 
+df = pd.read_csv('./data/currency_codes.csv', encoding="ISO-8859-1")
+#remove null rows
+currencies=df[pd.to_numeric(df['Number'], errors='coerce').notnull()].copy()
+currencies['Number'] = currencies['Number'].astype(float)  
+currencies.drop(['Number','Country'],inplace=True, axis=1)
+currencylist=dict(currencies.values.tolist())
+
 con = sqlite3.connect(DATABASE)
 
 def get_currencies():
+    con2 = sqlite3.connect(DATABASE)
     sql = f"""SELECT {CURR_CN}, {COUNTRY_CN} from {INDEXTABLEN} """
-    cur = con.cursor()
+    cur = con2.cursor()
     ans=cur.execute(sql).fetchall()
     return ans   
 
-def get_rate(currecy, year):
-    sql = f"""SELECT {RATE_CN} from {TABLENAME} WHERE {CURR_CN}='{currecy}' AND {YEAR_CN}={year}"""
-    cur = con.cursor()
-    ans=cur.execute(sql).fetchone()[0]  
+def get_range(currecy):
+    con2 = sqlite3.connect(DATABASE)
+    sql = f"""SELECT {YEAR_CN} from {TABLENAME} WHERE {CURR_CN}='{currecy}'"""
+    cur = con2.cursor()
+    ans=cur.execute(sql).fetchall()
+    ans=[x[0] for x in ans]
     return ans
+
+
+def get_rate(currecy, year):
+    con2 = sqlite3.connect(DATABASE)
+    sql = f"""SELECT {RATE_CN} from {TABLENAME} WHERE {CURR_CN}='{currecy}' AND {YEAR_CN}={year}"""
+    cur = con2.cursor()
+    ans=cur.execute(sql).fetchone()[0]  
+    con2.close()
+    return ans 
 
 def drop_table():
     sql_drop1 = f""" drop table if exists {TABLENAME};"""
@@ -121,6 +139,7 @@ if __name__=="__main__":
     #writeDB(dfavg)
     #get_xrates()
     
-    print(get_rate("LKR","1985"))
+    print(get_rate("LKR",1985))
     print(get_rate("LKR","2021"))
+    print(get_range("LKR"))
     print(get_currencies())
