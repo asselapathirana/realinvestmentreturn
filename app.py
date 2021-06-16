@@ -99,8 +99,12 @@ advbut=dbc.Button(
 
 
 headerdiv=dbc.Row([
-                dbc.Col(html.Div(html.H1("Property vs Stock Market Return Calculator")), width='auto'),
-                dbc.Col(html.Div(html.Img(id="logo", src=app.get_asset_url("apLogo2.png"))), width=2),
+                dbc.Col(html.Div(
+                    children=[html.H1("Property vs Stock Market"),
+                              html.H1("Return Calculator")
+                              ]
+                    ), width='auto'),
+                dbc.Col(html.Div(html.Img(id="logo", src=app.get_asset_url("apLogo2.png"))), width=3),
                 ], justify='between')
 
 
