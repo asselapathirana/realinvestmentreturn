@@ -60,7 +60,7 @@ def test_exchange_and_invest():
                                   adjust_inflation=True,
                                   dividend_tax=0.15,
                                   conversion_cost_frac=.02)
-    assert ret == pytest.approx ((8008.911933150266, 0.10963124194493212,  41.6711173, 0.3037, 89.696771, 196.1156705),rel=0.001)
+    assert ret == pytest.approx ((3663.009, 0.06706, 41.6711, 0.303699, 89.696, 196.114),rel=0.001)
     
     ret = get_return_value_in_local(1000, "LKR", 2001, 2021, 
                                   annual_cost_frac=0.15/100, 
@@ -87,8 +87,8 @@ def test_compare_investment():
     assert totalreturn_property == pytest.approx(0.067905, rel=0.001)
     assert value_from_property_income == pytest.approx(18303938, rel=0.001)
     assert property_inflation_adjusted_annual_return == pytest.approx(0.003629, rel=0.001)
-    assert stock_local_currency_end_value == pytest.approx(142105732, rel=0.001)
-    assert stock_annual_rate_in_local_currency == pytest.approx(0.120547, rel=0.001)
+    assert stock_local_currency_end_value == pytest.approx(72781379.7, rel=0.001)
+    assert stock_annual_rate_in_local_currency == pytest.approx(0.074653, rel=0.001)
     assert stock_usd_end_value == pytest.approx(739394, rel=0.001)
     assert ratio_to_older_local == pytest.approx(0.37038, rel=0.001)
     assert xrate1 == pytest.approx(100.44, rel=0.001)

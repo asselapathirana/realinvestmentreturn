@@ -21,6 +21,27 @@ spdf = pd.read_csv('./data/s_and_p_500.csv', index_col="Year",
                    converters={"Value": float})
 spdf['endvalue']=np.nan
 
+def inflation_calc(startyear, endyear):
+    initial_inf=spdf.loc[startyear]['CPI']
+    final_inf = spdf.loc[endyear]['CPI'] 
+    factor_to_old_dollars=initial_inf/final_inf
+    logging.debug("CPI1 {}, CPI2 {}, factor_to_old_dollars {}".format(initial_inf, final_inf, factor_to_old_dollars))    
+    return factor_to_old_dollars
+
+def calc_interest(buy_price, sell_price, buy_year, sell_year):
+    grossreturn=(1+(sell_price-buy_price)/buy_price)**(1/(sell_year-buy_year))-1
+    return grossreturn
+
+def get_xrate(year, currency):
+    return get_rate(currency, year)
+
+
+def xrate_check(df, year):
+    #check for sanity
+    # get the months available in df
+    months=[x.split("/")[0] for x in list(df['Month'])]
+    if not (len(months) and set(df['Month'])==set([ '{}/{}'.format(x,year) for x in months])):
+        raise DataNotAvailableError
 
 def calc_ret(myspdf, annual_cost_frac=0, dividend_tax=0.0):
     EVCOL=myspdf.columns.get_loc('endvalue')
@@ -49,10 +70,7 @@ def get_property_return(buy_price, sell_price, buy_year, sell_year,
     return returnonappreciation, totalreturn, exvalue # first return value appreciation, amount from rental income
 
 
-def calc_interest(buy_price, sell_price, buy_year, sell_year):
-    grossreturn=(1+(sell_price-buy_price)/buy_price)**(1/(sell_year-buy_year))-1
-    return grossreturn
- 
+
 
 """
 Calculagtes the final value of an investment with 
@@ -84,14 +102,7 @@ def sap500_end_value(investment,
         
     return fiv, ret, ratio_to_older_dollars
 
-def inflation_calc(startyear, endyear):
-    initial_inf=spdf.loc[startyear]['CPI']
-    final_inf = spdf.loc[endyear]['CPI'] 
-    factor_to_old_dollars=initial_inf/final_inf
-    logging.debug("CPI1 {}, CPI2 {}, factor_to_old_dollars {}".format(initial_inf, final_inf, factor_to_old_dollars))
-    
 
-    return factor_to_old_dollars
     
 
 def get_xrate_direct(year, currency):
@@ -103,16 +114,7 @@ def get_xrate_direct(year, currency):
     xrate_check(df, year)
     return df.mean().iloc[0] 
 
-def get_xrate(year, currency):
-    return get_rate(currency, year)
 
-
-def xrate_check(df, year):
-    #check for sanity
-    # get the months available in df
-    months=[x.split("/")[0] for x in list(df['Month'])]
-    if not (len(months) and set(df['Month'])==set([ '{}/{}'.format(x,year) for x in months])):
-        raise DataNotAvailableError
 
 """Convert local currency to USD, invest it, then convert back at the end of the period"""
 def get_return_value_in_local(investment, currency="LKR",  
@@ -130,10 +132,11 @@ def get_return_value_in_local(investment, currency="LKR",
     ratio_to_older_dollars = ret[2]
     
     xrate2=get_xrate(endyear,currency)
-    local_currency_end_value = usd_end_value*xrate2*(1-conversion_cost_frac)
+    ratio_to_older_local=ratio_to_older_dollars*xrate1/xrate2
+    local_currency_end_value = usd_end_value*1/ratio_to_older_dollars*xrate2*(1-conversion_cost_frac)*ratio_to_older_local
     total_stock_return_rate = calc_interest(investment,local_currency_end_value,startyear,endyear)
     #convert inflation to local currency. 
-    ratio_to_older_local=ratio_to_older_dollars*xrate1/xrate2
+    
     return local_currency_end_value, total_stock_return_rate, usd_end_value, ratio_to_older_local, xrate1, xrate2, 
 
 """
@@ -141,7 +144,7 @@ returns:
 return_only_property_appreciation = Annual return fraction only from property value appreciation
 totalreturn_property = total return from property (assuming income is annually invested with the same return as the property appreciation), 
 value_from_property_income = 'value' from investing annual income from the property
-stock_local_currency_end_value = end value in local currency after converting to USD, investing in stocks, sell and change back
+stock_local_currency_end_value = gross end value in local currency after converting to USD, investing in stocks, sell and change back
 stock_annual_rate_in_local_currency = return in terms of local currency as annual fraction
 xrate1 = exchange rate at the begining, 
 xrate2 = exchange rate at the end. 
@@ -208,8 +211,9 @@ def compare_investment(curr, bval, sval, byr, syr,
     * Then it is invested in a S&P500 index fund with expense ratio of {annual_stock_cost_frac:.2%}
     * As a non-resident alien investment, the dividend is taxed at {dividend_tax:.2%} (assuming a tax-treaty)
     After tax dividend is reinvested.")
-    * The inflation adjusted (based on US consumer price index data) value of the portfolio in {syr} will be {stock_usd_end_value:.0f} USD.
-    * Which will be (at USD.{curr}=x of {xrate2:.2f}), {stock_usd_end_value*(1-conversion_cost_frac)*xrate2:.0f} {curr}
+    * The gross (not inflation adjusted) value of the portfolio in {syr} will be {stock_usd_end_value:.0f} USD.
+    * Which will be (at USD.{curr}=x of {xrate2:.2f}), {stock_usd_end_value*(1-conversion_cost_frac)*xrate2:.0f} {curr}, gross.
+    * The 'inflation' adjsuted value is {stock_usd_end_value*(1-conversion_cost_frac)*xrate2*ratio_to_older_local} {curr}.
     * This represents an net annual ("inflation" adjusted) return {curr} of {stock_annual_rate_in_local_currency:.2%}"""  
    
     
