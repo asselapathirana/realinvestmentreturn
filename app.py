@@ -17,7 +17,10 @@ import logging
 
 fontawe='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css'
 
-app = DashProxy(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, fontawe], transforms=[MultiplexerTransform()])
+app = DashProxy(__name__, 
+                external_stylesheets=[dbc.themes.BOOTSTRAP, fontawe], 
+                transforms=[MultiplexerTransform()],
+                title="Property vs Stock Market")
 server = app.server
 
 currencies=[{"label":f"{y} ({x})", "value":y} for x,y in rer.currencylist.items()]
