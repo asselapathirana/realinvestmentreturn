@@ -133,6 +133,7 @@ def get_return_value_in_local(investment, currency="LKR",
     
     xrate2=get_xrate(endyear,currency)
     ratio_to_older_local=ratio_to_older_dollars*xrate1/xrate2
+    logging.debug(f"ratio_to_older_dollars{ratio_to_older_dollars}, xrate1 {xrate1}, xrate2 {xrate2}, xrate1/xrate2={xrate1/xrate2}")
     local_currency_end_value = usd_end_value*1/ratio_to_older_dollars*xrate2*(1-conversion_cost_frac)*ratio_to_older_local
     total_stock_return_rate = calc_interest(investment,local_currency_end_value,startyear,endyear)
     #convert inflation to local currency. 
@@ -182,7 +183,8 @@ def compare_investment(curr, bval, sval, byr, syr,
     property_inflation_adjusted_return=(propertyendvalue_inflation_adjusted-bval)/bval
     property_inflation_adjusted_annual_return=(property_inflation_adjusted_return+1)**(1/(syr-byr))-1
     
-    logging.debug(f"")
+    # FIX mistake (hack!)
+    stock_local_currency_end_value=stock_usd_end_value*(1-conversion_cost_frac)*xrate2    
     
     results=f"""
     ## Property Investment
@@ -199,6 +201,7 @@ def compare_investment(curr, bval, sval, byr, syr,
     * The total investment build-up upon selling the property {value_from_property_income+sval:.0f} {curr}. ({propertyendvalue:.0f} {curr} after selling cost.)
     * Total 'return on investment' (before "inflation" adjustment) is {totalreturn_property:.2%}
     * The USD.{curr}=x rate in {byr}={xrate1:.2f}, in {syr}={xrate2:.2f}.     
+    * The USD (in USA) consumer price index: {byr}={spdf.loc[byr]['CPI']}, {syr}={spdf.loc[syr]['CPI']}.
     * The factor to bring {syr} {curr} to {byr} {curr} is x{ratio_to_older_local:0.5f} (See 'small print' for the method)
     * The total return of {propertyendvalue:.0f} {curr} (Before adjusting for "inflation".) 
     * Ajusted for "inflation" (in {byr} LKR) {propertyendvalue_inflation_adjusted:.0f} {curr}. Important Note: See 'small print' below. 
@@ -212,11 +215,11 @@ def compare_investment(curr, bval, sval, byr, syr,
     * As a non-resident alien investment, the dividend is taxed at {dividend_tax:.2%} (assuming a tax-treaty)
     After tax dividend is reinvested.")
     * The gross (not inflation adjusted) value of the portfolio in {syr} will be {stock_usd_end_value:.0f} USD.
-    * Which will be (at USD.{curr}=x of {xrate2:.2f}), {stock_usd_end_value*(1-conversion_cost_frac)*xrate2:.0f} {curr}, gross.
-    * The 'inflation' adjsuted value is {stock_usd_end_value*(1-conversion_cost_frac)*xrate2*ratio_to_older_local} {curr}.
+    * Which will be (at USD.{curr}=x of {xrate2:.2f}), {stock_local_currency_end_value:.0f} {curr}, gross.
+    * The 'inflation' adjsuted value is {stock_local_currency_end_value*ratio_to_older_local:.0f} {curr}.
     * This represents an net annual ("inflation" adjusted) return {curr} of {stock_annual_rate_in_local_currency:.2%}"""  
    
-    
+
     return results, return_only_property_appreciation, totalreturn_property, \
            value_from_property_income, propertyendvalue, \
            propertyendvalue_inflation_adjusted, \

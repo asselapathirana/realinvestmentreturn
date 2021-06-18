@@ -209,7 +209,8 @@ ccf,
     colors = ['crimson',] * 2
     colors[1] = 'blue'
     
-    y=[propertyendvalue_inflation_adjusted, stock_local_currency_end_value]
+    
+    y=[propertyendvalue_inflation_adjusted, stock_local_currency_end_value*ratio_to_older_local]
     x=['Property', 'Stocks', ]
     fig = go.Figure(data=[go.Bar(
         x=x,
