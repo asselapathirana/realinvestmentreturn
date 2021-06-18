@@ -86,6 +86,20 @@ def card_placeholder(id_,label):
 results=[card_placeholder("left", "The Story"),
          card_placeholder("right", "In Graphics")]
          
+         
+ack=dcc.Markdown("""
+* Historical exchange rates were downloaded from [fxtop.com](fxtop.com).
+* Historical market performance, consumer price index were downloaded from [Prof. Robert Shiller's website](http://www.econ.yale.edu/~shiller/data.htm)
+
+""")
+         
+acknowlegements=[dbc.Card(
+            [
+            dbc.CardHeader("Data Sources"),
+            dbc.CardBody(      
+            [ack]
+            )])]
+
 
 advbut=dbc.Button(
             children=html.I(className="far fa-plus-square"),
@@ -117,7 +131,8 @@ app.layout = dbc.Container([
     dbc.Collapse([
         dbc.Row(dbc.Col(dbc.CardGroup(controls[5:]), width=12), className="m-2") ,  
         ], is_open=False, id="advanced",),
-    dbc.Row(dbc.Col(dbc.CardGroup(results), width=12), className="m-2")
+    dbc.Row(dbc.Col(dbc.CardGroup(results), width=12), className="m-2"),
+    dbc.Row(dbc.Col(dbc.CardGroup(acknowlegements), width=12), className="m-2")
 ], )
 
 
