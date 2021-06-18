@@ -87,7 +87,7 @@ def test_compare_investment():
     assert totalreturn_property == pytest.approx(0.067905, rel=0.001)
     assert value_from_property_income == pytest.approx(18303938, rel=0.001)
     assert property_inflation_adjusted_annual_return == pytest.approx(0.003629, rel=0.001)
-    assert stock_local_currency_end_value == pytest.approx(72781379.7, rel=0.001)
+    assert stock_local_currency_end_value == pytest.approx(142105732., rel=0.001)
     assert stock_annual_rate_in_local_currency == pytest.approx(0.074653, rel=0.001)
     assert stock_usd_end_value == pytest.approx(739394, rel=0.001)
     assert ratio_to_older_local == pytest.approx(0.37038, rel=0.001)
