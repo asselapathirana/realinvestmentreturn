@@ -134,7 +134,7 @@ def get_return_value_in_local(investment, currency="LKR",
     xrate2=get_xrate(endyear,currency)
     ratio_to_older_local=ratio_to_older_dollars*xrate1/xrate2
     logging.debug(f"ratio_to_older_dollars{ratio_to_older_dollars}, xrate1 {xrate1}, xrate2 {xrate2}, xrate1/xrate2={xrate1/xrate2}")
-    local_currency_end_value = usd_end_value*1/ratio_to_older_dollars*xrate2*(1-conversion_cost_frac)*ratio_to_older_local
+    local_currency_end_value = usd_end_value*xrate2*(1-conversion_cost_frac)*ratio_to_older_local
     total_stock_return_rate = calc_interest(investment,local_currency_end_value,startyear,endyear)
     #convert inflation to local currency. 
     
@@ -204,7 +204,7 @@ def compare_investment(curr, bval, sval, byr, syr,
     * The USD (in USA) consumer price index: {byr}={spdf.loc[byr]['CPI']}, {syr}={spdf.loc[syr]['CPI']}.
     * The factor to bring {syr} {curr} to {byr} {curr} is x{ratio_to_older_local:0.5f} (See 'small print' for the method)
     * The total return of {propertyendvalue:.0f} {curr} (Before adjusting for "inflation".) 
-    * Ajusted for "inflation" (in {byr} LKR) {propertyendvalue_inflation_adjusted:.0f} {curr}. Important Note: See 'small print' below. 
+    * Ajusted for "inflation" (in {byr} {curr}) {propertyendvalue_inflation_adjusted:.0f} {curr}. Important Note: See 'small print' below. 
     * Which is a real annual return of {property_inflation_adjusted_annual_return:.2%}.
     
     ## Alternative scenario:

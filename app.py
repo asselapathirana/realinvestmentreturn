@@ -104,15 +104,14 @@ acknowlegements=[dbc.Card(
             )])]
 
 
-advbut=dbc.Button(
-            children=html.I(className="far fa-plus-square"),
+advbut= dbc.Row([ dbc.Button(html.I(className="far fa-plus-square"),
             id="advanced-button",
             #className="btn-sm",
             size="sm",
             color="Light",
             n_clicks=0,
             #style={'background-color':'transparent'},
-        )
+        ), html.Div("Advanced", style={'color': 'blue', 'fontSize': 'smaller'}),])
 
 
 headerdiv=dbc.Row([
@@ -130,7 +129,7 @@ app.layout = dbc.Container([
     dbc.Row(dbc.Col(dbc.CardGroup(controls[0:1]), width=12), className="m-2") ,   
     dbc.Row(dbc.Col(dbc.CardGroup(controls[1:3]), width=12), className="m-2") ,   
     dbc.Row(dbc.Col(dbc.CardGroup(controls[3:5]), width=12), className="m-2") ,   
-    dbc.Row(dbc.Col(advbut, width=1)),
+    dbc.Row(dbc.Col(advbut, width="auto")),
     dbc.Collapse([
         dbc.Row(dbc.Col(dbc.CardGroup(controls[5:]), width=12), className="m-2") ,  
         ], is_open=False, id="advanced",),
@@ -201,6 +200,9 @@ sdt,
 ccf,  
 #divi, 
 ):
+    if not (byr and bval and syr and sval):
+        raise dash.exceptions.PreventUpdate()
+    
     results, return_only_property_appreciation, \
     totalreturn_property, \
     value_from_property_income,\
@@ -320,4 +322,4 @@ ccf,
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    app.run_server(debug=True)
+    app.run_server(debug=False)
