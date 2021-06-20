@@ -196,19 +196,24 @@ def update_gui(search):
     logging.getLogger().handlers[0].flush()
     qs=parse_qs(urlparse(search).query)
     #raise dash.exceptions.PreventUpdate()
-    returnvals=[qs["curr"]][0]
-    returnvals+=[float(qs[x][0]) for x in [
-        #'curr',
-        'byr',  
-        'bval', 
-        'syr',  
-        'sval', 
-        'scost',
-        'rfrac',
-        'rcost',
-        'ascf', 
-        'sdt',  
-        'ccf',]]
+    try:
+        
+        returnvals=[qs["curr"]][0]
+        returnvals+=[float(qs[x][0]) for x in [
+            #'curr',
+            'byr',  
+            'bval', 
+            'syr',  
+            'sval', 
+            'scost',
+            'rfrac',
+            'rcost',
+            'ascf', 
+            'sdt',  
+            'ccf',]]
+    except KeyError as err:
+        logging.debug(f"Error {err}")
+        raise dash.exceptions.PreventUpdate()
     
     logging.debug(f"Return values: {returnvals}")
     return returnvals
@@ -244,8 +249,11 @@ sdt,
 ccf,  
 #divi, 
 ):
+    logging.debug(f"byr={byr} bval={bval} syr={syr} sval={sval}")
     if not (byr and bval and syr and sval):
-        raise dash.exceptions.PreventUpdate()
+        logging.debug(f"Not updating")
+        #raise dash.exceptions.PreventUpdate
+        return [dcc.Markdown(f"# No Data for {curr}")]*2+[f"#No Data for {curr}"]
     
     results, return_only_property_appreciation, \
     totalreturn_property, \
