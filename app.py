@@ -11,6 +11,7 @@ from plotly.subplots import make_subplots
 import readExchangeRates as rer
 import SandPCalc as sap
 import logging
+from urllib.parse import urlparse, parse_qs
 
 
 # ############ Initialize app ############
@@ -125,6 +126,7 @@ headerdiv=dbc.Row([
 
 
 app.layout = dbc.Container([
+    dcc.Location(id="url", refresh=False),
     dbc.Row(dbc.Col(dbc.CardGroup([dbc.Card(headerdiv)]), width=12), className="m-2"),
     dbc.Row(dbc.Col(dbc.CardGroup(controls[0:1]), width=12), className="m-2") ,   
     dbc.Row(dbc.Col(dbc.CardGroup(controls[1:3]), width=12), className="m-2") ,   
@@ -132,6 +134,7 @@ app.layout = dbc.Container([
     dbc.Row(dbc.Col(advbut, width="auto")),
     dbc.Collapse([
         dbc.Row(dbc.Col(dbc.CardGroup(controls[5:]), width=12), className="m-2") ,  
+        dbc.Row(dbc.Col(dbc.CardGroup([dbc.Input(id='urllabel', disabled=True)],),  width=12), className="m-2")
         ], is_open=False, id="advanced",),
     dbc.Row(dbc.Col(dbc.CardGroup(results), width=12), className="m-2"),
     dbc.Row(dbc.Col(dbc.CardGroup(acknowlegements), width=12), className="m-2")
@@ -164,15 +167,56 @@ def toggle_collapse(n, is_open):
 def update_output(curr):
     yrs=rer.get_range(curr)
     years=[{"label":y, "value":y} for y in yrs]
-    byr=yrs[0] if yrs[0]>2001 else 2001
-    syr=yrs[-1]
-    return years, years, byr, syr
+    if len(years):
+        byr=yrs[0] if yrs[0]>2001 else 2001
+        syr=yrs[-1]
+        return years, years, byr, syr
+    else:
+        return years, years, None, None
 
-
+@app.callback(
+    [Output(component_id='curr', component_property='value'),
+     Output(component_id='byr',  component_property='value'),   
+     Output(component_id='bval', component_property='value'),
+     Output(component_id='syr',  component_property='value'),
+     Output(component_id='sval', component_property='value'),
+     Output(component_id='scost', component_property='value'),
+     Output(component_id='rfrac', component_property='value'),
+     Output(component_id='rcost', component_property='value'),
+     Output(component_id='ascf', component_property='value'),
+     Output(component_id='sdt',  component_property='value'),
+     Output(component_id='ccf',  component_property='value'),
+     #Output(component_id='divi', component_property='value'),
+],
+    Input(component_id='url', component_property='search')
+    )
+def update_gui(search):
+    
+    logging.debug(f"SEARCH: {search}")
+    logging.getLogger().handlers[0].flush()
+    qs=parse_qs(urlparse(search).query)
+    #raise dash.exceptions.PreventUpdate()
+    returnvals=[qs["curr"]][0]
+    returnvals+=[float(qs[x][0]) for x in [
+        #'curr',
+        'byr',  
+        'bval', 
+        'syr',  
+        'sval', 
+        'scost',
+        'rfrac',
+        'rcost',
+        'ascf', 
+        'sdt',  
+        'ccf',]]
+    
+    logging.debug(f"Return values: {returnvals}")
+    return returnvals
 
 @app.callback(
     [Output(component_id='left', component_property='children',),
-     Output(component_id='right', component_property='children',)],    
+     Output(component_id='right', component_property='children',),
+     Output(component_id='urllabel', component_property='value')],    
     [Input(component_id='curr', component_property='value'),
      Input(component_id='byr',  component_property='value'),   
      Input(component_id='bval', component_property='value'),
@@ -318,8 +362,12 @@ ccf,
     See [this for a good explaination](https://saylordotorg.github.io/text_international-economics-theory-and-policy/s20-purchasing-power-parity.html)
     """    
     
-    return dcc.Markdown(results+'\n'+smallprint), graphs
+    url=f"?curr={curr}&byr={byr}&bval={bval}&syr={syr}&sval={sval}&scost={scost}&rfrac={rfrac}&rcost={rcost}&ascf={ascf}&sdt={sdt}&ccf={ccf}"
+    logging.debug(f"URL: {url}")
+
+    
+    return dcc.Markdown(results+'\n'+smallprint), graphs, url
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    app.run_server(debug=False)
+    app.run_server(debug=True)
