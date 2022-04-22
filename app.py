@@ -343,7 +343,7 @@ ccf,
         showlegend=False,
     )
     
-    df=rer.get_rates(curr, byr, syr)
+    df=rer.get_rates(curr, byr, syr+1)
     rate=f'USD.{curr}=x'
     df.columns = ['Year', rate]
     fig4=px.line(df, x='Year', y=rate, title="Exchange Rate over time")
