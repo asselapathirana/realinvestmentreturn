@@ -1,6 +1,7 @@
 import pytest
 
 from SandPCalc import *
+from readExchangeRates import get_rates
 
 def test_currency_list():
     assert currencylist['Afghani']  == 'AFN'
@@ -96,11 +97,17 @@ def test_compare_investment():
     assert propertyendvalue == pytest.approx(65803938, rel=0.001)
     assert len(results) > 1000
     
+def test_exchange_rate_df():
+    df=get_rates('LKR',1998,2021)
+    assert df.sum()[0] == pytest.approx(44209, rel=0.001)
+    assert df.sum()[1] == pytest.approx(2641, rel=0.001)
+
 
 if __name__=="__main__":
     #pytest.main()
-    test_with_inflation()
-    test_with_inflation_and_cost()
-    test_with_inflation_cost_and_dividend_tax()
-    test_exchange_and_invest()
+    #test_with_inflation()
+    #test_with_inflation_and_cost()
+    #test_with_inflation_cost_and_dividend_tax()
+    #test_exchange_and_invest()
+    test_exchange_rate_df()
     print("Done")

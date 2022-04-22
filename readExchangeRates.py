@@ -3,6 +3,7 @@ import pandas as pd
 import sqlite3
 import logging
 
+
 DATABASE = "./data/XRATES.db"
 TABLENAME = "xrates"
 INDEXTABLEN="countries"
@@ -35,6 +36,11 @@ def get_range(currecy):
     ans=[x[0] for x in ans]
     return ans
 
+def get_rates(currency, fromy, toyear):
+    con2 = sqlite3.connect(DATABASE)
+    sql = f"""SELECT {YEAR_CN}, {RATE_CN} from {TABLENAME} WHERE {CURR_CN}='{currency}' AND {YEAR_CN}<{toyear} AND {YEAR_CN} > {fromy}"""
+    df = pd.read_sql_query(sql, con2)    
+    return df
 
 def get_rate(currecy, year):
     con2 = sqlite3.connect(DATABASE)
@@ -133,13 +139,14 @@ def get_xrates():
 
 if __name__=="__main__":
     logging.basicConfig(level=logging.DEBUG)
-    #drop_table()
-    #create_table()
+    drop_table()
+    create_table()
     #dfavg=get_xrate("LKR")
     #writeDB(dfavg)
-    #get_xrates()
+    get_xrates()
     
     print(get_rate("LKR",1985))
     print(get_rate("LKR","2021"))
     print(get_range("LKR"))
-    print(get_currencies())
+    print(get_rate("LKR", str(get_range('LKR')[-1])))
+    #print(get_currencies())

@@ -7,6 +7,7 @@ from dash.dependencies import Input, Output
 from dash_extensions.enrich import MultiplexerTransform, DashProxy
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import plotly.express as px
 
 import readExchangeRates as rer
 import SandPCalc as sap
@@ -342,10 +343,16 @@ ccf,
         showlegend=False,
     )
     
+    df=rer.get_rates(curr, byr, syr)
+    rate=f'USD.{curr}=x'
+    df.columns = ['Year', rate]
+    fig4=px.line(df, x='Year', y=rate, title="Exchange Rate over time")
+    
 
     graphs=[dbc.Row(dbc.Card(dcc.Graph(figure=fig))),
             dbc.Row(dbc.Card(dcc.Graph(figure=fig2))),
             dbc.Row(dbc.Card(dcc.Graph(figure=fig3))),
+            dbc.Row(dbc.Card(dcc.Graph(figure=fig4))),
             ]
     
     smallprint=f"""
